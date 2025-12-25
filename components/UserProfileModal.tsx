@@ -120,7 +120,8 @@ export default function UserProfileModal({
                   </span>
                 </div>
                 <p className="text-2xl font-bold text-yellow-700">
-                  {user.trustScore || 0}
+                  {/* {user.trustScore || 0} */}
+                  {Number(user.trustScore ?? 0).toFixed(2)}
                   <span className="text-sm font-normal text-yellow-600">/100</span>
                 </p>
               </div>
