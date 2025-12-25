@@ -23,6 +23,7 @@ interface Conversation {
   participants: string[];
     isMatch: 'no' | 'waiting' | 'confirm';
     confirmBy?: string;
+    waitingBy?: string;
 }
 
 export default function ChatPage() {
