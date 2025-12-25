@@ -7,16 +7,16 @@ import { userAPI } from '@/lib/api';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 
 const sports = [
-  { id: 'football', name: 'Bóng đá', icon: '⚽' },
-  { id: 'basketball', name: 'Bóng rổ', icon: '🏀' },
-  { id: 'tennis', name: 'Tennis', icon: '🎾' },
-  { id: 'badminton', name: 'Cầu lông', icon: '🏸' },
-  { id: 'volleyball', name: 'Bóng chuyền', icon: '🏐' },
-  { id: 'table-tennis', name: 'Bóng bàn', icon: '🏓' },
-  { id: 'swimming', name: 'Bơi lội', icon: '🏊' },
-  { id: 'running', name: 'Chạy bộ', icon: '🏃' },
-  { id: 'cycling', name: 'Đạp xe', icon: '🚴' },
-  { id: 'gym', name: 'Gym', icon: '💪' },
+  { id: 'Football', name: 'Bóng đá', icon: '⚽' },
+  { id: 'Basketball', name: 'Bóng rổ', icon: '🏀' },
+  { id: 'Tennis', name: 'Tennis', icon: '🎾' },
+  { id: 'Badminton', name: 'Cầu lông', icon: '🏸' },
+  { id: 'Volleyball', name: 'Bóng chuyền', icon: '🏐' },
+  { id: 'Table-tennis', name: 'Bóng bàn', icon: '🏓' },
+  { id: 'Swimming', name: 'Bơi lội', icon: '🏊' },
+  { id: 'Running', name: 'Chạy bộ', icon: '🏃' },
+  { id: 'Cycling', name: 'Đạp xe', icon: '🚴' },
+  { id: 'Gym', name: 'Gym', icon: '💪' },
 ];
 
 export default function SportSelectionPage() {
