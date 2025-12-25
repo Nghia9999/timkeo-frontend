@@ -122,7 +122,7 @@ export default function ProfilePage() {
               <p className="text-gray-600">{user.email}</p>
               <div className="mt-2 flex items-center gap-4 text-sm">
                 <span className="text-gray-600">
-                  ⭐ Trust Score: {user.trustScore || 0}/100
+                  ⭐ Trust Score: {(user.trustScore ?? 0).toFixed(2)}/100
                 </span>
                 <span className="text-gray-600">
                   📊 Đánh giá: {user.ratingCount || 0}
