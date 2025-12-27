@@ -586,17 +586,36 @@ export default function ChatPage() {
               <button onClick={() => setShowPostPreview(false)} className="text-gray-500 hover:text-gray-700">Đóng</button>
             </div>
             <p className="mt-3 text-gray-700">{postPreview.content}</p>
-            {postPreview.image && (
-              <img src={postPreview.image} alt={postPreview.title} className="mt-3 w-full rounded-lg object-contain" />
-            )}
             {(() => {
+              const hasImage = Boolean(postPreview.image);
               const coords = postPreview.location ? { lat: postPreview.location.latitude, lng: postPreview.location.longitude } : null;
-              if (!coords) return null;
+              const hasCoords = Boolean(coords);
+
+              if (!hasImage && !hasCoords) return null;
+
               return (
-                <div className="mt-3">
-                  <a href={`https://www.google.com/maps/search/?api=1&query=${coords.lat},${coords.lng}`} target="_blank" rel="noreferrer" className="inline-block">
-                    <MapThumbnail lat={coords.lat} lng={coords.lng} />
-                  </a>
+                <div className="mt-3 flex flex-col gap-3">
+                  {hasImage && (
+                    <div className={`w-full flex items-center justify-center ${hasCoords ? 'md:justify-center' : ''}`}>
+                      <img
+                        src={postPreview.image}
+                        alt={postPreview.title}
+                        className={`${hasCoords ? 'max-h-[36vh] max-w-[60%]' : 'max-h-[60vh] max-w-full'} rounded-lg object-contain shadow-sm`}
+                        
+                      />
+                    </div>
+                  )}
+
+                  {hasCoords && (() => {
+                    const { lat, lng } = coords as { lat: number; lng: number };
+                    return (
+                      <div className="flex items-center justify-center">
+                        <a href={`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`} target="_blank" rel="noreferrer" className="inline-block">
+                          <MapThumbnail lat={lat} lng={lng} width={hasImage ? 220 : 280} height={hasImage ? 120 : 160} />
+                        </a>
+                      </div>
+                    );
+                  })()}
                 </div>
               );
             })()}
