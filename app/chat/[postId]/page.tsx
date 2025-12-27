@@ -8,6 +8,7 @@ import { FiArrowLeft, FiSend, FiMessageCircle } from 'react-icons/fi';
 import { io, Socket } from 'socket.io-client';
 import UserProfileModal from '@/components/UserProfileModal';
 import RatingModal from '@/components/RatingModal';
+import MapThumbnail from '@/components/MapThumbnail';
 
 interface Chat {
   _id: string;
@@ -37,9 +38,13 @@ export default function ChatPage() {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [otherParticipant, setOtherParticipant] = useState<{ _id: string; name: string; avatar?: string } | null>(null);
   const [postInactive, setPostInactive] = useState(false);
+  const [postExpired, setPostExpired] = useState(false);
   const [postOwnerId, setPostOwnerId] = useState<string | null>(null);
   const [postMatchId, setPostMatchId] = useState<string | null>(null);
   const [showRatingModal, setShowRatingModal] = useState(false);
+  const [showPostPreview, setShowPostPreview] = useState(false);
+  const [postPreview, setPostPreview] = useState<any | null>(null);
+  const [loadingPostPreview, setLoadingPostPreview] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const params = useParams();
@@ -94,6 +99,8 @@ export default function ChatPage() {
           const matchId = post.matchId ? String(post.matchId) : null;
           setPostMatchId(matchId);
           setPostInactive(String(post.status || '').toLowerCase() === 'inactive');
+          const startTime = post.startTime ? new Date(post.startTime).getTime() : NaN;
+          setPostExpired(!isNaN(startTime) && startTime < Date.now());
           const ownerId = typeof post.userId === 'string' ? post.userId : (post.userId && post.userId._id) || null;
           setPostOwnerId(ownerId);
         } catch (e) {
@@ -157,6 +164,8 @@ export default function ChatPage() {
         const ownerId = typeof post.userId === 'string' ? post.userId : (post.userId && post.userId._id) || null;
         setPostOwnerId(ownerId);
         setPostInactive(String(post.status || '').toLowerCase() === 'inactive');
+          const startTime = post.startTime ? new Date(post.startTime).getTime() : NaN;
+          setPostExpired(!isNaN(startTime) && startTime < Date.now());
         setPostMatchId(post.matchId ? String(post.matchId) : null);
       } catch (e) {
         console.error('Failed to load post info:', e);
@@ -284,6 +293,21 @@ export default function ChatPage() {
     }
   };
 
+  const openPostPreview = async () => {
+    if (loadingPostPreview) return;
+    setLoadingPostPreview(true);
+    try {
+      const resp = await postAPI.getOne(postId);
+      setPostPreview(resp.data);
+      setShowPostPreview(true);
+    } catch (e) {
+      console.error('Failed to load post preview', e);
+      alert('Không thể tải bài đăng');
+    } finally {
+      setLoadingPostPreview(false);
+    }
+  };
+
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim() || !conversation || !user || !socket) return;
@@ -335,16 +359,26 @@ export default function ChatPage() {
                 const baseDisabled =
                   conversation.isMatch === 'confirm' ||
                   (conversation.isMatch === 'waiting' && conversation.waitingBy === user?.id);
-                const postClosed = Boolean(postMatchId) || (postInactive && user?.id !== postOwnerId);
+                const postClosed = Boolean(postMatchId) || postExpired || (postInactive && user?.id !== postOwnerId);
 
                 return (
                   <div className="flex items-center gap-2">
+                    <button
+                      onClick={openPostPreview}
+                      className="rounded-full px-3 py-1.5 text-xs font-semibold bg-blue-500 cursor-pointer border border-gray-200 text-gray-700 hover:bg-gray-50"
+                      title="Xem bài đăng"
+                    >
+                      Xem bài đăng
+                    </button>
+
                     <button
                       onClick={async () => {
                       if (!conversation || !user) return;
                       if (postClosed) {
                         if (postMatchId) {
                           alert('Bài viết đã được chốt kèo, không thể chốt hoặc xác nhận nữa.');
+                        } else if (postExpired) {
+                          alert('Bài viết đã hết hạn, không thể chốt kèo.');
                         } else {
                           alert('Bài đăng đã không còn hoạt động, không thể chốt kèo.');
                         }
@@ -499,6 +533,7 @@ export default function ChatPage() {
               );
             })
           )}
+
           <div ref={messagesEndRef} />
         </div>
       </div>
@@ -538,10 +573,45 @@ export default function ChatPage() {
         </form>
       </div>
 
+      {/* Post preview modal */}
+      {showPostPreview && postPreview && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowPostPreview(false)} />
+          <div className="relative z-50 mx-4 max-w-2xl rounded-2xl bg-white p-4 shadow-2xl">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-lg font-bold">{postPreview.title}</h3>
+                <p className="text-sm text-gray-500">{postPreview.sport} • {new Date(postPreview.startTime).toLocaleString('vi-VN')}</p>
+              </div>
+              <button onClick={() => setShowPostPreview(false)} className="text-gray-500 hover:text-gray-700">Đóng</button>
+            </div>
+            <p className="mt-3 text-gray-700">{postPreview.content}</p>
+            {postPreview.image && (
+              <img src={postPreview.image} alt={postPreview.title} className="mt-3 w-full rounded-lg object-contain" />
+            )}
+            {(() => {
+              const coords = postPreview.location ? { lat: postPreview.location.latitude, lng: postPreview.location.longitude } : null;
+              if (!coords) return null;
+              return (
+                <div className="mt-3">
+                  <a href={`https://www.google.com/maps/search/?api=1&query=${coords.lat},${coords.lng}`} target="_blank" rel="noreferrer" className="inline-block">
+                    <MapThumbnail lat={coords.lat} lng={coords.lng} />
+                  </a>
+                </div>
+              );
+            })()}
+            <div className="mt-4 flex justify-end gap-2">
+              <button onClick={() => setShowPostPreview(false)} className="rounded-xl px-4 py-2 bg-gray-100 text-gray-700">Đóng</button>
+              <button onClick={() => { setShowPostPreview(false); router.push('/feed'); }} className="rounded-xl px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">Mở Feed</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* User Profile Modal */}
       {selectedUserId && (
         <UserProfileModal
-          userId={selectedUserId}
+          userId={selectedUserId || ''}
           isOpen={isProfileModalOpen}
           onClose={() => {
             setIsProfileModalOpen(false);
@@ -552,7 +622,6 @@ export default function ChatPage() {
       <RatingModal
         isOpen={showRatingModal && Boolean(postMatchId) && Boolean(otherParticipant)}
         onClose={() => {
-          // remember dismissal so modal won't reappear for this match & user
           try {
             const key = `rating_dismissed_${postMatchId}_${user?.id}`;
             if (typeof window !== 'undefined' && postMatchId) localStorage.setItem(key, 'true');
@@ -565,7 +634,6 @@ export default function ChatPage() {
         raterId={user?.id || ''}
         rateeId={otherParticipant?._id || ''}
         onSubmitted={() => {
-          // mark as done so modal won't reappear
           try {
             const key = `rating_dismissed_${postMatchId}_${user?.id}`;
             if (typeof window !== 'undefined' && postMatchId) localStorage.setItem(key, 'true');

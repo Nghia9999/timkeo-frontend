@@ -360,6 +360,11 @@ export default function FeedPage() {
                   ? post.interestedUserId.length
                   : 0;
 
+                const start = new Date(post.startTime);
+                const isExpired = !isNaN(start.getTime()) && start.getTime() < Date.now();
+                const matchId = (post as any).matchId ?? null;
+                const isMatched = Boolean(matchId);
+
                 return (
               <div
                 key={post._id}
@@ -445,9 +450,19 @@ export default function FeedPage() {
                       </div>
                     </div>
                   </div>
-                  <span className="rounded-full bg-gradient-to-r from-green-100 to-emerald-100 px-4 py-1 text-sm font-semibold text-green-700 shadow-sm">
-                    {post.status}
-                  </span>
+                  {isMatched ? (
+                    <span className="rounded-full bg-gradient-to-r from-green-100 to-emerald-100 px-4 py-1 text-sm font-semibold text-green-700 shadow-sm">
+                      ✓ Đã chốt
+                    </span>
+                  ) : isExpired ? (
+                    <span className="rounded-full bg-red-100 px-4 py-1 text-sm font-semibold text-red-700 shadow-sm">
+                      Đã hết hạn
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-gradient-to-r from-green-100 to-emerald-100 px-4 py-1 text-sm font-semibold text-green-700 shadow-sm">
+                      {post.status}
+                    </span>
+                  )}
                 </div>
 
                 <h2 className="mb-2 text-lg font-bold text-gray-900">
